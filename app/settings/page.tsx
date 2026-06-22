@@ -1,10 +1,21 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { cookies } from "next/headers"
 import { ThemeSetting } from "@/components/theme-setting"
 
-export default async function SettingsPage() {
-  const initialTheme = (await cookies()).get("theme")?.value === "dark" ? "dark" : "light"
+function getClientTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light"
+  try {
+    return document.cookie.includes("theme=dark") ? "dark" : "light"
+  } catch {
+    return "light"
+  }
+}
+
+export default function SettingsPage() {
+  const [initialTheme] = useState<"light" | "dark">(getClientTheme)
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 py-8">

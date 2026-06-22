@@ -1,11 +1,11 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { WheelPicker } from "@/components/wheel-picker"
-import { addTodo } from "@/app/actions/todos"
+import { addTodo } from "@/lib/todos"
 
 function pad(n: number) {
   return String(n).padStart(2, "0")
@@ -17,7 +17,7 @@ function daysInMonth(year: number, month: number) {
 
 export function AddTodoForm() {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const now = new Date()
@@ -57,18 +57,18 @@ export function AddTodoForm() {
   const maxDay = daysInMonth(year, month)
   const safeDay = Math.min(day, maxDay)
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setError(null)
     const dueDate = `${year}-${pad(month)}-${pad(safeDay)}`
     const dueTime = `${pad(hour)}:${pad(minute)}:00`
-    startTransition(async () => {
-      try {
-        await addTodo({ title, dueDate, dueTime })
-        router.push("/")
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "添加失败")
-      }
-    })
+    setSaving(true)
+    try {
+      await addTodo({ title, dueDate, dueTime })
+      router.push("/")
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "添加失败")
+      setSaving(false)
+    }
   }
 
   return (
@@ -129,10 +129,10 @@ export function AddTodoForm() {
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={isPending}
+        disabled={saving}
         className="mt-8 w-full rounded-full bg-primary py-3.5 text-sm font-medium tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {isPending ? "保存中…" : "保存待办"}
+        {saving ? "保存中…" : "保存待办"}
       </button>
     </div>
   )

@@ -1,7 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { cookies } from 'next/headers'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -41,19 +40,31 @@ export const viewport: Viewport = {
   ],
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const theme = (await cookies()).get('theme')?.value === 'dark' ? 'dark' : ''
-
   return (
     <html
       lang="zh-CN"
-      className={`${geistSans.variable} ${geistMono.variable} bg-background ${theme}`}
+      className={`${geistSans.variable} ${geistMono.variable} bg-background`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = document.cookie.replace(/(?:(?:^|.*;\\s*)theme\\s*\\=\\s*([^;]*).*$)|^.*$/, "$1");
+                  if (theme === 'dark') document.documentElement.classList.add('dark');
+                } catch(e) {}
+              })()
+            `,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

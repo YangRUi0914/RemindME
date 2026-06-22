@@ -1,11 +1,12 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getTodos } from "@/app/actions/todos"
+import { getTodos } from "@/lib/todos"
 import { TodoItem } from "@/components/todo-item"
-import type { Todo } from "@/lib/db/schema"
-
-export const dynamic = "force-dynamic"
+import type { Todo } from "@/lib/todos"
 
 const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
 
@@ -13,8 +14,17 @@ function dayKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
-export default async function HistoryPage() {
-  const todos = await getTodos()
+export default function HistoryPage() {
+  const [todos, setTodos] = useState<Todo[]>([])
+
+  const loadTodos = useCallback(() => {
+    setTodos(getTodos())
+  }, [])
+
+  useEffect(() => {
+    loadTodos()
+  }, [loadTodos])
+
   const now = new Date()
   const todayKey = dayKey(now)
 
@@ -99,7 +109,7 @@ export default async function HistoryPage() {
                   {/* 该日期下的待办 */}
                   <ul className="mt-1 flex flex-col">
                     {items.map((todo) => (
-                      <TodoItem key={todo.id} todo={todo} />
+                      <TodoItem key={todo.id} todo={todo} onUpdate={loadTodos} />
                     ))}
                   </ul>
                 </div>
