@@ -27,7 +27,7 @@ export function AddTodoForm() {
   const [day, setDay] = useState(now.getDate())
   const [hour, setHour] = useState(now.getHours())
   const [minute, setMinute] = useState(now.getMinutes())
-  const [hasTime, setHasTime] = useState(false)
+  const [isTimeReminderEnabled, setIsTimeReminderEnabled] = useState(false)
 
   const years = useMemo(
     () =>
@@ -61,7 +61,7 @@ export function AddTodoForm() {
   async function handleSubmit() {
     setError(null)
     const dueDate = `${year}-${pad(month)}-${pad(safeDay)}`
-    const dueTime = hasTime ? `${pad(hour)}:${pad(minute)}:00` : ""
+    const dueTime = isTimeReminderEnabled ? `${pad(hour)}:${pad(minute)}:00` : ""
     setSaving(true)
     try {
       await addTodo({ title, dueDate, dueTime })
@@ -115,25 +115,41 @@ export function AddTodoForm() {
 
         {/* 第三行：时间（选填） */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">提醒时间</span>
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">时间</span>
+
+          {/* 开关行条 */}
+          <label
+            className={`flex items-center justify-between rounded-2xl border px-5 py-4 transition-colors cursor-pointer ${
+              isTimeReminderEnabled
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-foreground hover:bg-muted"
+            }`}
+          >
+            <span className="text-base">开启时间提醒</span>
             <button
               type="button"
               role="switch"
-              aria-checked={hasTime}
-              onClick={() => setHasTime(!hasTime)}
-              className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-                hasTime ? "bg-foreground" : "bg-muted-foreground/30"
+              aria-checked={isTimeReminderEnabled}
+              onClick={(e) => {
+                e.preventDefault()
+                setIsTimeReminderEnabled(!isTimeReminderEnabled)
+              }}
+              className={`relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors ${
+                isTimeReminderEnabled ? "bg-background/20" : "bg-muted-foreground/30"
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 rounded-full bg-background shadow transition-transform ${
-                  hasTime ? "translate-x-5" : "translate-x-1"
+                className={`inline-block h-4 w-4 rounded-full shadow transition-transform ${
+                  isTimeReminderEnabled
+                    ? "translate-x-5 bg-background"
+                    : "translate-x-1 bg-background"
                 }`}
               />
             </button>
-          </div>
-          {hasTime && (
+          </label>
+
+          {/* 时间滚轮（开关打开时显示） */}
+          {isTimeReminderEnabled && (
             <WheelPicker
               columns={[
                 { items: hours, value: hour, onChange: setHour, ariaLabel: "时" },
