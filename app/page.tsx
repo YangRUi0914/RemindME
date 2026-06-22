@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Plus, Clock } from "lucide-react"
+import { Plus, Clock, Settings } from "lucide-react"
 
 export default function HomePage() {
   return (
@@ -9,8 +9,8 @@ export default function HomePage() {
           到时候记得提醒我！
         </h1>
 
-        {/* 文字下方一行：左下加号，右下历史 */}
-        <div className="mt-10 flex w-full items-center justify-center gap-20">
+        {/* 文字下方一行：加号、历史（居中）、设置 */}
+        <div className="mt-10 flex w-full items-center justify-center gap-10 sm:gap-14">
           <Link
             href="/add"
             aria-label="添加待办"
@@ -25,6 +25,14 @@ export default function HomePage() {
             className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground hover:text-background"
           >
             <Clock className="h-6 w-6" strokeWidth={1.5} />
+          </Link>
+
+          <Link
+            href="/settings"
+            aria-label="设置"
+            className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground hover:text-background"
+          >
+            <Settings className="h-6 w-6" strokeWidth={1.5} />
           </Link>
         </div>
       </div>
