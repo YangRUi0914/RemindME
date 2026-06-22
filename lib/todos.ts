@@ -75,12 +75,11 @@ async function cancelNotification(id: number): Promise<void> {
 export async function addTodo(input: {
   title: string
   dueDate: string
-  dueTime: string
+  dueTime?: string
 }): Promise<Todo> {
   const title = input.title.trim()
   if (!title) throw new Error("请输入待办名称")
   if (!input.dueDate) throw new Error("请选择日期")
-  if (!input.dueTime) throw new Error("请选择时间")
 
   const todos = readTodos()
   const maxId = todos.reduce((max, t) => Math.max(max, t.id), 0)
@@ -88,15 +87,17 @@ export async function addTodo(input: {
     id: maxId + 1,
     title,
     dueDate: input.dueDate,
-    dueTime: input.dueTime,
+    dueTime: input.dueTime ?? "",
     completed: false,
     createdAt: new Date().toISOString(),
   }
   todos.push(todo)
   writeTodos(todos)
 
-  // 向安卓系统注册一个真正的系统级定时提醒
-  await scheduleNotification(todo)
+  // 只有用户选了具体时间，才向安卓注册系统级定时提醒
+  if (input.dueTime) {
+    await scheduleNotification(todo)
+  }
 
   return todo
 }

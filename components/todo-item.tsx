@@ -6,7 +6,7 @@ import { toggleTodo, deleteTodo } from "@/lib/todos"
 import type { Todo } from "@/lib/todos"
 
 export function TodoItem({ todo, onUpdate }: { todo: Todo; onUpdate: () => void }) {
-  const time = todo.dueTime.slice(0, 5)
+  const time = todo.dueTime ? todo.dueTime.slice(0, 5) : ""
 
   function handleToggle() {
     toggleTodo(todo.id, !todo.completed)

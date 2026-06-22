@@ -27,6 +27,7 @@ export function AddTodoForm() {
   const [day, setDay] = useState(now.getDate())
   const [hour, setHour] = useState(now.getHours())
   const [minute, setMinute] = useState(now.getMinutes())
+  const [hasTime, setHasTime] = useState(false)
 
   const years = useMemo(
     () =>
@@ -60,7 +61,7 @@ export function AddTodoForm() {
   async function handleSubmit() {
     setError(null)
     const dueDate = `${year}-${pad(month)}-${pad(safeDay)}`
-    const dueTime = `${pad(hour)}:${pad(minute)}:00`
+    const dueTime = hasTime ? `${pad(hour)}:${pad(minute)}:00` : ""
     setSaving(true)
     try {
       await addTodo({ title, dueDate, dueTime })
@@ -112,15 +113,34 @@ export function AddTodoForm() {
           />
         </div>
 
-        {/* 第三行：时间 */}
+        {/* 第三行：时间（选填） */}
         <div className="flex flex-col gap-2">
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">时间</span>
-          <WheelPicker
-            columns={[
-              { items: hours, value: hour, onChange: setHour, ariaLabel: "时" },
-              { items: minutes, value: minute, onChange: setMinute, ariaLabel: "分" },
-            ]}
-          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">提醒时间</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={hasTime}
+              onClick={() => setHasTime(!hasTime)}
+              className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                hasTime ? "bg-foreground" : "bg-muted-foreground/30"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-background shadow transition-transform ${
+                  hasTime ? "translate-x-5" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          {hasTime && (
+            <WheelPicker
+              columns={[
+                { items: hours, value: hour, onChange: setHour, ariaLabel: "时" },
+                { items: minutes, value: minute, onChange: setMinute, ariaLabel: "分" },
+              ]}
+            />
+          )}
         </div>
       </div>
 
