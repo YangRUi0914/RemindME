@@ -1,8 +1,11 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import { cookies } from "next/headers"
 import { ThemeSetting } from "@/components/theme-setting"
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const initialTheme = (await cookies()).get("theme")?.value === "dark" ? "dark" : "light"
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 py-8">
       <header className="mb-10 flex items-center">
@@ -18,7 +21,7 @@ export default function SettingsPage() {
 
       <section className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">界面主题</p>
-        <ThemeSetting />
+        <ThemeSetting initialTheme={initialTheme} />
       </section>
     </main>
   )
