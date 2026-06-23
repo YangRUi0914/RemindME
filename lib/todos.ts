@@ -2,6 +2,7 @@
 
 import { Capacitor } from "@capacitor/core"
 import { LocalNotifications } from "@capacitor/local-notifications"
+import { getNotificationSound, getVibrationEnabled } from "@/lib/settings"
 
 export interface Todo {
   id: number
@@ -47,14 +48,16 @@ function parseTriggerAt(dueDate: string, dueTime: string): Date {
 async function ensureChannel(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return
   try {
+    const sound = getNotificationSound()
+    const vibration = getVibrationEnabled()
     await LocalNotifications.createChannel({
       id: CHANNEL_ID,
       name: "待办提醒",
-      description: "RemindME 待办事项定时提醒",
+      description: "RemindME 待办事项定时提醒 — 长响铃直到用户处理",
       importance: 5,
       visibility: 1,
-      sound: "beep.wav",
-      vibration: true,
+      sound: sound ?? undefined,
+      vibration,
       lights: true,
     })
   } catch (e) {
@@ -65,6 +68,8 @@ async function ensureChannel(): Promise<void> {
 async function scheduleNotification(todo: Todo): Promise<void> {
   if (!Capacitor.isNativePlatform()) return
   try {
+    const sound = getNotificationSound()
+    const vibration = getVibrationEnabled()
     await LocalNotifications.requestPermissions()
     await ensureChannel()
     await LocalNotifications.schedule({
@@ -75,7 +80,8 @@ async function scheduleNotification(todo: Todo): Promise<void> {
           id: todo.id,
           channelId: CHANNEL_ID,
           schedule: { at: parseTriggerAt(todo.dueDate, todo.dueTime) },
-          sound: "beep.wav",
+          ...(sound ? { sound } : {}),
+          ...(vibration ? {} : { vibration: false }),
           smallIcon: "ic_stat_remindme",
         },
       ],
