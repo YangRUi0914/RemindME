@@ -73,7 +73,10 @@ export function AddTodoForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 py-8">
+    <div
+      className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-8"
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 32px) + 2rem)" }}
+    >
       <header className="mb-10 flex items-center">
         <Link
           href="/"
