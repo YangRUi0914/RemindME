@@ -11,6 +11,7 @@ import {
   setRingtone,
   getVibrationEnabled,
   setVibrationEnabled,
+  playRingtonePreview,
 } from "@/lib/settings"
 
 export function RingtoneSetting() {
@@ -23,6 +24,7 @@ export function RingtoneSetting() {
   function selectRingtone(id: RingtoneId) {
     setRingtoneState(id)
     setRingtone(id)
+    playRingtonePreview(id)
     setOpen(false)
   }
 

@@ -1,14 +1,13 @@
 // DIY 实验室模式 — localStorage 配置管理
 
-export type BlockKey = "title" | "todolist" | "buttons"
+export type BlockKey = "title" | "buttons"
 
 export const BLOCK_LABELS: Record<BlockKey, string> = {
   title: "文案区",
-  todolist: "待办列表区",
   buttons: "按钮区",
 }
 
-export const DEFAULT_ORDER: BlockKey[] = ["title", "todolist", "buttons"]
+export const DEFAULT_ORDER: BlockKey[] = ["title", "buttons"]
 
 const DEFAULT_TITLE = "到时候记得提醒我！"
 

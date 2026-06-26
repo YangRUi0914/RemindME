@@ -55,13 +55,33 @@ export function setRingtone(id: RingtoneId): void {
   write("selected_sound", id)
 }
 
-/** 返回通知插件可用的 sound 值：default → undefined，否则传标识符（不带后缀） */
+/** 返回通知插件可用的 sound 值：default → undefined，否则传「标识符.mp3」（iOS / Android 统一后缀） */
 export function getNotificationSound(): string | undefined {
   const id = getRingtone()
-  return id === "default" ? undefined : id
+  return id === "default" ? undefined : id + ".mp3"
 }
 
-/** 返回当前铃声对应的 Android 通知渠道 ID */
+/** 返回当前铃声对应的 Android 通知渠道 ID（动态时间戳破除系统静音缓存） */
 export function getChannelId(): string {
-  return "channel_" + getRingtone()
+  return "channel_" + getRingtone() + "_" + Date.now()
+}
+
+// ── 铃声试听 ──
+
+let previewAudio: HTMLAudioElement | null = null
+
+export function playRingtonePreview(id: RingtoneId): void {
+  if (typeof window === "undefined") return
+  if (id === "default") return
+  try {
+    if (previewAudio) {
+      previewAudio.pause()
+      previewAudio = null
+    }
+    const audio = new Audio("/sounds/" + id + ".mp3")
+    audio.play().catch(() => {})
+    previewAudio = audio
+  } catch {
+    // 浏览器限制静默忽略
+  }
 }

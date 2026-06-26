@@ -146,11 +146,7 @@ function ButtonsBlock() {
 export default function HomePage() {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState("到时候记得提醒我！")
-  const [blocks, setBlocks] = useState<BlockKey[]>([
-    "title",
-    "todolist",
-    "buttons",
-  ])
+  const [blocks, setBlocks] = useState<BlockKey[]>(["title", "buttons"])
 
   useEffect(() => {
     setBlocks(getDiyBlocks())
@@ -183,7 +179,6 @@ export default function HomePage() {
     title: () => (
       <TitleBlock editing={editing} title={title} onChange={handleTitleChange} />
     ),
-    todolist: () => <TodoListBlock />,
     buttons: () => <ButtonsBlock />,
   }
 
@@ -218,7 +213,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── 编辑模式：拖拽排序 ── */}
+      {/* ── 编辑模式：拖拽排序（仅文案区 + 按钮区）── */}
       {editing ? (
         <DragDropContext onDragEnd={onDragEnd}>
           <StrictModeDroppable droppableId="diy-blocks">
@@ -265,7 +260,7 @@ export default function HomePage() {
           </StrictModeDroppable>
         </DragDropContext>
       ) : (
-        /* ── 普通模式：静态渲染（区块间 gap-10 确保隔离）── */
+        /* ── 普通模式：静态渲染（仅文案区 + 按钮区）── */
         <div className="flex w-full flex-col gap-10">
           {blocks.map((key) => (
             <div key={key} className="flex flex-col items-center w-full">
@@ -274,6 +269,11 @@ export default function HomePage() {
           ))}
         </div>
       )}
+
+      {/* ── 待办列表区：固定渲染，不参与拖拽 ── */}
+      <div className="mt-10 w-full flex flex-col items-center">
+        <TodoListBlock />
+      </div>
     </main>
   )
 }
