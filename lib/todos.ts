@@ -1,8 +1,6 @@
-// Client-side todo storage using localStorage + Capacitor native notifications
+// Client-side todo storage using localStorage + platform-native reminders
 
-import { Capacitor } from "@capacitor/core"
-import { LocalNotifications } from "@capacitor/local-notifications"
-import { getNotificationSound, getChannelId } from "@/lib/settings"
+import { scheduleReminder, cancelReminder } from "@/lib/reminderScheduler"
 
 export interface Todo {
   id: number
@@ -37,67 +35,6 @@ export function getTodos(): Todo[] {
   })
 }
 
-function parseTriggerAt(dueDate: string, dueTime: string): Date {
-  const [year, month, day] = dueDate.split("-").map(Number)
-  const [hour, minute] = dueTime.split(":").map(Number)
-  return new Date(year, month - 1, day, hour, minute, 0)
-}
-
-async function ensureChannel(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return
-  try {
-    const channelId = getChannelId()
-    const sound = getNotificationSound()
-    await LocalNotifications.createChannel({
-      id: channelId,
-      name: "待办提醒",
-      description: "RemindME 待办事项定时提醒 — 长响铃直到用户处理",
-      importance: 5,
-      visibility: 1,
-      ...(sound ? { sound } : {}),
-      vibration: true,
-      lights: true,
-    })
-  } catch (e) {
-    console.error("Failed to create notification channel:", e)
-  }
-}
-
-async function scheduleNotification(todo: Todo): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return
-  try {
-    const channelId = getChannelId()
-    const sound = getNotificationSound()
-    await LocalNotifications.requestPermissions()
-    await ensureChannel()
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          title: "RemindME",
-          body: todo.title,
-          id: todo.id,
-          channelId,
-          schedule: { at: parseTriggerAt(todo.dueDate, todo.dueTime) },
-          ...(sound ? { sound } : {}),
-          vibration: true,
-          smallIcon: "ic_stat_remindme",
-        },
-      ],
-    })
-  } catch (e) {
-    console.error("Failed to schedule notification:", e)
-  }
-}
-
-async function cancelNotification(id: number): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return
-  try {
-    await LocalNotifications.cancel({ notifications: [{ id }] })
-  } catch (e) {
-    console.error("Failed to cancel notification:", e)
-  }
-}
-
 export async function addTodo(input: {
   title: string
   dueDate: string
@@ -120,9 +57,15 @@ export async function addTodo(input: {
   todos.push(todo)
   writeTodos(todos)
 
-  // 只有用户选了具体时间，才向安卓注册系统级定时提醒
+  // 用户选了具体时间 → 平台分治调度系统级提醒
   if (input.dueTime) {
-    await scheduleNotification(todo)
+    await scheduleReminder({
+      id: todo.id,
+      title: todo.title,
+      body: todo.title,
+      dueDate: input.dueDate,
+      dueTime: input.dueTime,
+    })
   }
 
   return todo
@@ -136,8 +79,7 @@ export function toggleTodo(id: number, completed: boolean): void {
     writeTodos(todos)
 
     if (completed) {
-      // 标记为已完成 → 取消系统提醒
-      cancelNotification(id)
+      cancelReminder(id)
     }
   }
 }
@@ -146,6 +88,5 @@ export function deleteTodo(id: number): void {
   const todos = readTodos()
   writeTodos(todos.filter((t) => t.id !== id))
 
-  // 删除待办 → 取消系统提醒
-  cancelNotification(id)
+  cancelReminder(id)
 }
