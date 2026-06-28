@@ -66,30 +66,3 @@ export function getChannelId(): string {
   return "channel_" + getRingtone() + "_" + Date.now()
 }
 
-// ── 铃声试听 ──
-
-let previewAudio: HTMLAudioElement | null = null
-
-export async function playRingtonePreview(id: RingtoneId): Promise<void> {
-  if (typeof window === "undefined") return
-  if (id === "default") return
-  try {
-    // 停掉上一个正在播放的音频
-    if (previewAudio) {
-      previewAudio.pause()
-      previewAudio.currentTime = 0
-      previewAudio = null
-    }
-    // 使用相对路径（不加开头的斜杠），兼容 Capacitor 文件加载
-    const audio = new Audio("sounds/" + id + ".mp3")
-    previewAudio = audio
-    await audio.play()
-    // 播放结束后释放引用
-    audio.addEventListener("ended", () => {
-      if (previewAudio === audio) previewAudio = null
-    })
-  } catch (e) {
-    console.error("音频播放失败:", e)
-    previewAudio = null
-  }
-}

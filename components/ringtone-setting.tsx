@@ -13,20 +13,21 @@ import {
   setRingtone,
   getVibrationEnabled,
   setVibrationEnabled,
-  playRingtonePreview,
 } from "@/lib/settings"
+import { useSoundPreview } from "@/hooks/useSoundPreview"
 
 export function RingtoneSetting() {
   const [ringtone, setRingtoneState] = useState<RingtoneId>(getRingtone)
   const [vibration, setVibrationState] = useState(getVibrationEnabled)
   const [open, setOpen] = useState(false)
+  const { previewSound } = useSoundPreview()
 
   const current = RINGTONE_OPTIONS.find((r) => r.id === ringtone) ?? RINGTONE_OPTIONS[0]
 
   function selectRingtone(id: RingtoneId) {
     setRingtoneState(id)
     setRingtone(id)
-    playRingtonePreview(id)
+    previewSound(id)
     setOpen(false)
     // 触觉反馈
     if (Capacitor.isNativePlatform()) {
