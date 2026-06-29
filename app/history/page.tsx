@@ -23,16 +23,15 @@ export default function HistoryPage() {
     loadTodos()
   }
 
-  async function handleToggle(item: TimelineItem) {
-    if (item.isRepeatOccurrence && !item.completed) {
-      if (!window.confirm("这是重复待办，完成后将停止整个重复提醒，是否继续？")) return
-    }
+  function handleToggle(item: TimelineItem, e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
     try {
-      await toggleTodo(item.todoId, !item.completed)
-      loadTodos()
-    } catch (e) {
-      console.error("toggle todo failed in history", { todoId: item.todoId, error: e })
+      toggleTodo(item.todoId, !item.completed)
+    } catch (error) {
+      console.error("toggle todo failed in history", { todoId: item.todoId, error })
     }
+    loadTodos()
   }
 
   useEffect(() => {
@@ -117,24 +116,28 @@ export default function HistoryPage() {
                           {item.time || "—"}
                         </span>
 
-                        {/* 完成圆圈 */}
-                        <button
-                          type="button"
-                          aria-label={item.completed ? "标记为未完成" : "完成待办"}
-                          onClick={() => handleToggle(item)}
-                          className="flex h-11 w-11 shrink-0 items-center justify-center"
-                        >
-                          <span
-                            className={cn(
-                              "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors",
-                              item.completed
-                                ? "border-foreground bg-foreground text-background"
-                                : "border-foreground/60 text-transparent active:bg-foreground/10",
-                            )}
+                        {/* 完成圆圈：重复 occurrence 不显示 */}
+                        {!item.isRepeatOccurrence && (
+                          <button
+                            type="button"
+                            aria-label={item.completed ? "标记为未完成" : "完成待办"}
+                            onClick={(e) => handleToggle(item, e)}
+                            className="flex h-11 w-11 shrink-0 items-center justify-center"
                           >
-                            {item.completed && <Check className="h-3.5 w-3.5" strokeWidth={2.5} />}
-                          </span>
-                        </button>
+                            <span
+                              className={cn(
+                                "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors",
+                                item.completed
+                                  ? "border-foreground bg-foreground text-background"
+                                  : "border-foreground/60 text-transparent active:bg-foreground/10",
+                              )}
+                            >
+                              {item.completed && <Check className="h-3.5 w-3.5" strokeWidth={2.5} />}
+                            </span>
+                          </button>
+                        )}
+                        {/* 重复 occurrence 占位，保持对齐 */}
+                        {item.isRepeatOccurrence && <span className="h-11 w-11 shrink-0" />}
 
                         {/* 标题 */}
                         <p className={cn(

@@ -30,14 +30,14 @@ export interface Todo {
 
 const STORAGE_KEY = "remindme-todos"
 
-/** 兼容旧数据格式：将旧字段迁移到新字段 */
+/** 兼容旧数据格式：强制所有字段类型正确，防御旧数据不规范导致渲染崩溃 */
 function migrateTodo(raw: any): Todo {
   const t: Todo = {
-    id: raw.id ?? 0,
-    title: raw.title ?? "",
-    completed: raw.completed ?? false,
-    createdAt: raw.createdAt ?? new Date().toISOString(),
-    notificationIds: raw.notificationIds ?? [],
+    id: typeof raw.id === "number" ? raw.id : Number(raw.id) || 0,
+    title: typeof raw.title === "string" ? raw.title : String(raw.title ?? ""),
+    completed: Boolean(raw.completed),
+    createdAt: typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
+    notificationIds: Array.isArray(raw.notificationIds) ? raw.notificationIds : [],
   }
 
   // 新字段直接读取
@@ -55,12 +55,11 @@ function migrateTodo(raw: any): Todo {
   // 重复提醒迁移
   if (typeof raw.repeatEnabled === "boolean") {
     t.repeatEnabled = raw.repeatEnabled
-    t.repeatWeekdays = raw.repeatWeekdays ?? []
+    t.repeatWeekdays = Array.isArray(raw.repeatWeekdays) ? raw.repeatWeekdays : []
     t.repeatTime = raw.repeatTime || undefined
   } else if (raw.repeat && raw.repeat !== "none") {
-    // 旧 repeat + repeatDays → 新字段
     t.repeatEnabled = true
-    t.repeatWeekdays = raw.repeatDays ?? raw.repeatWeekdays ?? []
+    t.repeatWeekdays = Array.isArray(raw.repeatDays) ? raw.repeatDays : Array.isArray(raw.repeatWeekdays) ? raw.repeatWeekdays : []
     t.repeatTime = raw.dueTime || raw.repeatTime || undefined
   }
 
@@ -177,28 +176,14 @@ export async function addTodo(input: {
   return todo
 }
 
-export async function toggleTodo(id: number, completed: boolean): Promise<void> {
+export function toggleTodo(id: number, completed: boolean): void {
   const todos = readTodos()
   const index = todos.findIndex((t) => t.id === id)
   if (index === -1) return
 
-  // 1. 先更新本地状态
+  // P0 安全降级：只写 localStorage，不调任何通知/插件/原生代码
   todos[index].completed = completed
   writeTodos(todos)
-
-  // 2. 标记完成 → best-effort 取消通知（失败仅打日志，不回滚）
-  if (completed) {
-    const ids = Array.isArray(todos[index].notificationIds) ? todos[index].notificationIds : []
-    try {
-      if (ids.length > 0) {
-        await cancelReminders(ids)
-      } else {
-        await cancelReminder(id)
-      }
-    } catch (e) {
-      console.error("cancel reminders after completing todo failed", { todoId: id, notificationIds: ids, error: e })
-    }
-  }
 }
 
 export function deleteTodo(id: number): void {
