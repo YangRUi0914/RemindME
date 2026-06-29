@@ -12,6 +12,7 @@ import {
 } from "@hello-pangea/dnd"
 import { getTodos } from "@/lib/todos"
 import type { Todo } from "@/lib/todos"
+import { TodoItem } from "@/components/todo-item"
 import {
   type BlockKey,
   BLOCK_LABELS,
@@ -77,9 +78,13 @@ function TitleBlock({
 function TodoListBlock() {
   const [todos, setTodos] = useState<Todo[]>([])
 
-  useEffect(() => {
+  const loadTodos = useCallback(() => {
     setTodos(getTodos().filter((t) => !t.completed))
   }, [])
+
+  useEffect(() => {
+    loadTodos()
+  }, [loadTodos])
 
   if (todos.length === 0) {
     return (
@@ -88,17 +93,9 @@ function TodoListBlock() {
   }
 
   return (
-    <ul className="flex flex-col gap-2 w-full max-w-xs mx-auto">
+    <ul className="flex flex-col gap-1 w-full max-w-xs mx-auto">
       {todos.slice(0, 5).map((t) => (
-        <li
-          key={t.id}
-          className="flex items-center gap-3 text-sm text-muted-foreground"
-        >
-          <span className="w-10 shrink-0 text-xs tabular-nums text-muted-foreground/50">
-            {t.dueTime ? t.dueTime.slice(0, 5) : "—"}
-          </span>
-          <span className="truncate">{t.title}</span>
-        </li>
+        <TodoItem key={t.id} todo={t} onUpdate={loadTodos} />
       ))}
       {todos.length > 5 && (
         <p className="text-xs text-muted-foreground/30 mt-1 text-center">
