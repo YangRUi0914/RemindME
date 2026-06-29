@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "sync:audio": "node scripts/sync-native-audio-assets.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
