@@ -21,6 +21,9 @@ public class ReminderAlarmPlugin extends Plugin {
         String body = call.getString("body", "");
         long fireAt = call.getLong("fireAt");
         String soundName = call.getString("soundName", "alarm");
+        boolean isRepeat = Boolean.TRUE.equals(call.getBoolean("isRepeat"));
+        int repeatWeekday = call.getInt("repeatWeekday", 0);
+        String repeatTime = call.getString("repeatTime", "");
 
         Context context = getContext();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -35,6 +38,9 @@ public class ReminderAlarmPlugin extends Plugin {
         intent.putExtra("title", title);
         intent.putExtra("body", body);
         intent.putExtra("sound_name", soundName);
+        intent.putExtra("is_repeat", isRepeat);
+        intent.putExtra("repeat_weekday", repeatWeekday);
+        intent.putExtra("repeat_time", repeatTime);
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

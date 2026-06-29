@@ -1,10 +1,14 @@
 package com.yangrui.remindme.alarm;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
+
+import java.util.Calendar;
 
 public class ReminderAlarmReceiver extends BroadcastReceiver {
     private static final String TAG = "ReminderAlarmReceiver";
@@ -15,7 +19,16 @@ public class ReminderAlarmReceiver extends BroadcastReceiver {
         String title = intent.getStringExtra("title");
         String body = intent.getStringExtra("body");
         String soundName = intent.getStringExtra("sound_name");
+        boolean isRepeat = intent.getBooleanExtra("is_repeat", false);
 
+        // === 自动续排：重复提醒触发后，注册下一周同一天 ===
+        if (isRepeat) {
+            int repeatWeekday = intent.getIntExtra("repeat_weekday", 0);
+            String repeatTime = intent.getStringExtra("repeat_time");
+            rescheduleNextOccurrence(context, reminderId, title, body, soundName, repeatWeekday, repeatTime);
+        }
+
+        // === 启动响铃 Service ===
         Intent serviceIntent = new Intent(context, ReminderRingingService.class);
         serviceIntent.setAction(ReminderRingingService.ACTION_START_RINGING);
         serviceIntent.putExtra("reminder_id", reminderId);
@@ -33,11 +46,65 @@ public class ReminderAlarmReceiver extends BroadcastReceiver {
             Log.e(TAG, "Foreground service permission denied — reminderId=" + reminderId
                 + ", soundName=" + soundName + ", sdk=" + Build.VERSION.SDK_INT, e);
         } catch (IllegalStateException e) {
-            Log.e(TAG, "Cannot start foreground service (app in background?) — reminderId=" + reminderId
+            Log.e(TAG, "Cannot start foreground service — reminderId=" + reminderId
                 + ", sdk=" + Build.VERSION.SDK_INT, e);
         } catch (Exception e) {
             Log.e(TAG, "Failed to start ringing service — reminderId=" + reminderId
                 + ", soundName=" + soundName + ", sdk=" + Build.VERSION.SDK_INT, e);
+        }
+    }
+
+    /** 计算下一周同一天同一时间，并重新注册 AlarmManager */
+    private void rescheduleNextOccurrence(Context context, int id, String title, String body,
+                                          String soundName, int weekday, String repeatTime) {
+        if (weekday < 1 || weekday > 7) return;
+        try {
+            String[] parts = repeatTime.split(":");
+            int hour = parts.length >= 1 ? Integer.parseInt(parts[0]) : 9;
+            int minute = parts.length >= 2 ? Integer.parseInt(parts[1]) : 0;
+
+            Calendar next = Calendar.getInstance();
+            next.set(Calendar.HOUR_OF_DAY, hour);
+            next.set(Calendar.MINUTE, minute);
+            next.set(Calendar.SECOND, 0);
+            next.set(Calendar.MILLISECOND, 0);
+
+            // Capacitor: 1=Sun…7=Sat; Java Calendar: 1=Sun…7=Sat — 一致
+            int today = next.get(Calendar.DAY_OF_WEEK);
+            int daysUntil = weekday - today;
+            if (daysUntil < 0) daysUntil += 7;
+            if (daysUntil == 0 && next.getTimeInMillis() <= System.currentTimeMillis()) daysUntil = 7;
+            next.add(Calendar.DAY_OF_MONTH, daysUntil);
+
+            AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (am == null) return;
+
+            Intent newIntent = new Intent(context, ReminderAlarmReceiver.class);
+            newIntent.setAction("com.yangrui.remindme.ALARM_TRIGGER");
+            newIntent.putExtra("reminder_id", id);
+            newIntent.putExtra("title", title);
+            newIntent.putExtra("body", body);
+            newIntent.putExtra("sound_name", soundName);
+            newIntent.putExtra("is_repeat", true);
+            newIntent.putExtra("repeat_weekday", weekday);
+            newIntent.putExtra("repeat_time", repeatTime);
+
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            PendingIntent pi = PendingIntent.getBroadcast(context, id, newIntent, flags);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pi);
+            } else {
+                am.setExact(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pi);
+            }
+
+            Log.d(TAG, "Repeat alarm rescheduled: reminderId=" + id
+                + ", weekday=" + weekday + ", nextFireAt=" + next.getTime());
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to reschedule repeat alarm — reminderId=" + id, e);
         }
     }
 }

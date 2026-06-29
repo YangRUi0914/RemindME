@@ -28,16 +28,16 @@ export function TodoItem({ todo, onUpdate }: { todo: Todo; onUpdate: () => void 
 
       <button
         type="button"
-        aria-label={todo.completed ? "标记为未完成" : "标记为已完成"}
+        aria-label={todo.completed ? "标记为未完成" : "完成待办"}
         onClick={handleToggle}
         className={cn(
-          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           todo.completed
             ? "border-foreground bg-foreground text-background"
-            : "border-muted-foreground/50 text-transparent",
+            : "border-foreground text-transparent hover:bg-foreground/10",
         )}
       >
-        <Check className="h-3 w-3" strokeWidth={3} />
+        <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
       </button>
 
       <p className={cn("min-w-0 flex-1 truncate text-sm", todo.completed && "text-muted-foreground line-through")}>

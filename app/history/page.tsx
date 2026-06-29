@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getTodos } from "@/lib/todos"
+import { getTodos, deleteTodo } from "@/lib/todos"
 import { getTimelineItems, dayKey } from "@/lib/timeline"
 import type { TimelineItem } from "@/lib/timeline"
 
@@ -16,6 +16,12 @@ export default function HistoryPage() {
   const loadTodos = useCallback(() => {
     setTodos(getTodos())
   }, [])
+
+  function handleDelete(todoId: number) {
+    if (!window.confirm("确定要删除这个待办吗？")) return
+    deleteTodo(todoId)
+    loadTodos()
+  }
 
   useEffect(() => {
     loadTodos()
@@ -106,6 +112,14 @@ export default function HistoryPage() {
                             <span className="ml-1.5 text-[10px] text-muted-foreground/40">重复</span>
                           )}
                         </p>
+                        <button
+                          type="button"
+                          aria-label="删除待办"
+                          onClick={() => handleDelete(item.todoId)}
+                          className="shrink-0 rounded-full p-1 text-muted-foreground/30 opacity-0 transition-all hover:text-destructive group-hover:opacity-100"
+                        >
+                          <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                        </button>
                       </li>
                     ))}
                   </ul>
