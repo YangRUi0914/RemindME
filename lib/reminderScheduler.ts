@@ -1,7 +1,6 @@
-// RemindME — 平台分治提醒调度（Android AlarmManager / iOS LocalNotifications / Web noop）
+// RemindME — 平台分治提醒调度（Android AlarmManager / iOS _LocalNotifications / Web noop）
+// 注意：Capacitor 模块仅在运行时加载，防止 Vercel 构建阶段报错
 
-import { Capacitor, registerPlugin } from "@capacitor/core"
-import { LocalNotifications } from "@capacitor/local-notifications"
 import { getNotificationSound, getRingtone } from "@/lib/settings"
 
 // Android 原生插件接口（由 ReminderAlarmPlugin.java 暴露）
@@ -19,14 +18,29 @@ interface ReminderAlarmNative {
   openExactAlarmSettings(): Promise<void>
 }
 
-const ReminderAlarm = registerPlugin<ReminderAlarmNative>("ReminderAlarm")
+let _Capacitor: any = null
+let __LocalNotifications: any = null
+let _ReminderAlarm: ReminderAlarmNative | null = null
+
+async function ensureCapacitor() {
+  if (_Capacitor) return
+  try {
+    const core = await import("@capacitor/core")
+    _Capacitor = core.Capacitor
+    const ln = await import("@capacitor/local-notifications")
+    __LocalNotifications = ln._LocalNotifications
+    _ReminderAlarm = core.registerPlugin<ReminderAlarmNative>("ReminderAlarm")
+  } catch {
+    // Vercel 构建环境无 Capacitor → 静默降级
+  }
+}
 
 function getNativePlugin(): ReminderAlarmNative | null {
+  if (!_ReminderAlarm) return null
   try {
-    const platform = Capacitor.getPlatform()
+    const platform = _Capacitor?.getPlatform?.()
     if (platform === "web") return null
-    // 测试是否已实现（调用轻量方法）
-    return ReminderAlarm
+    return _ReminderAlarm
   } catch {
     return null
   }
@@ -71,11 +85,12 @@ function makeNotificationId(): number {
 
 /** 调度单次提醒 — 返回通知 ID */
 export async function scheduleReminder(params: ReminderParams): Promise<number | null> {
-  const platform = Capacitor.getPlatform()
+  await ensureCapacitor()
+  const platform = _Capacitor?.getPlatform() ?? "web"
   const fireAt = parseFireAt(params.dueDate, params.dueTime)
 
   // 通知权限（Android 13+ / iOS）
-  await LocalNotifications.requestPermissions().catch(() => {})
+  await _LocalNotifications.requestPermissions().catch(() => {})
 
   // Android: 使用原生 AlarmManager 插件
   if (platform === "android") {
@@ -97,9 +112,9 @@ export async function scheduleReminder(params: ReminderParams): Promise<number |
     }
   }
 
-  // iOS / fallback: LocalNotifications
+  // iOS / fallback: _LocalNotifications
   const sound = getNotificationSound()
-  await LocalNotifications.schedule({
+  await _LocalNotifications.schedule({
     notifications: [
       {
         title: "RemindME",
@@ -115,13 +130,14 @@ export async function scheduleReminder(params: ReminderParams): Promise<number |
 
 /** 调度重复提醒 — 为每个 weekday 生成独立通知，返回所有通知 ID 数组 */
 export async function scheduleRepeatReminders(params: RepeatReminderParams): Promise<number[]> {
+  await ensureCapacitor()
   const { hour, minute } = parseTime(params.repeatTime)
-  const platform = Capacitor.getPlatform()
+  const platform = _Capacitor?.getPlatform() ?? "web"
   const sound = getNotificationSound()
   const ids: number[] = []
 
   // 通知权限
-  await LocalNotifications.requestPermissions().catch(() => {})
+  await _LocalNotifications.requestPermissions().catch(() => {})
 
   // Android: 预排未来 30 天内所有匹配 weekday 的提醒
   if (platform === "android") {
@@ -176,14 +192,15 @@ export async function scheduleRepeatReminders(params: RepeatReminderParams): Pro
     }
   })
 
-  await LocalNotifications.requestPermissions()
-  await LocalNotifications.schedule({ notifications })
+  await _LocalNotifications.requestPermissions()
+  await _LocalNotifications.schedule({ notifications })
   return ids
 }
 
 /** 取消单个提醒 */
 export async function cancelReminder(id: number): Promise<void> {
-  const platform = Capacitor.getPlatform()
+  await ensureCapacitor()
+  const platform = _Capacitor?.getPlatform() ?? "web"
 
   if (platform === "android") {
     const plugin = getNativePlugin()
@@ -193,12 +210,12 @@ export async function cancelReminder(id: number): Promise<void> {
     }
   }
 
-  await LocalNotifications.cancel({ notifications: [{ id }] }).catch(() => {})
+  await _LocalNotifications.cancel({ notifications: [{ id }] }).catch(() => {})
 }
 
 /** 批量取消提醒 */
 export async function cancelReminders(ids: number[]): Promise<void> {
-  const platform = Capacitor.getPlatform()
+  const platform = _Capacitor?.getPlatform() ?? "web"
 
   if (platform === "android") {
     const plugin = getNativePlugin()
@@ -210,14 +227,14 @@ export async function cancelReminders(ids: number[]): Promise<void> {
     }
   }
 
-  await LocalNotifications.cancel({
+  await _LocalNotifications.cancel({
     notifications: ids.map((id) => ({ id })),
   }).catch(() => {})
 }
 
 /** 停止当前响铃 */
 export async function stopCurrentRinging(): Promise<void> {
-  const platform = Capacitor.getPlatform()
+  const platform = _Capacitor?.getPlatform() ?? "web"
   if (platform === "android") {
     const plugin = getNativePlugin()
     if (plugin) {
@@ -228,7 +245,7 @@ export async function stopCurrentRinging(): Promise<void> {
 
 /** 检查 exact alarm 权限 */
 export async function checkExactAlarmPermission(): Promise<boolean> {
-  const platform = Capacitor.getPlatform()
+  const platform = _Capacitor?.getPlatform() ?? "web"
   if (platform !== "android") return true
   const plugin = getNativePlugin()
   if (!plugin) return true
