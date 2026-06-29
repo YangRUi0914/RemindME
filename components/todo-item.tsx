@@ -31,10 +31,16 @@ export function TodoItem({ todo, onUpdate, showDelete = false, isRepeatOccurrenc
     onUpdate()
   }
 
-  function handleDelete() {
+  function handleDelete(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
     if (!window.confirm("确定要删除这个待办吗？")) return
     setDeleting(true)
-    deleteTodo(todo.id)
+    try {
+      deleteTodo(todo.id)
+    } catch (error) {
+      console.error("delete todo failed", { todoId: todo.id, error })
+    }
     onUpdate()
   }
 
@@ -82,7 +88,7 @@ export function TodoItem({ todo, onUpdate, showDelete = false, isRepeatOccurrenc
         <button
           type="button"
           aria-label="删除待办"
-          onClick={handleDelete}
+          onClick={(e) => handleDelete(e)}
           disabled={deleting}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground/35 active:text-destructive disabled:opacity-30"
         >

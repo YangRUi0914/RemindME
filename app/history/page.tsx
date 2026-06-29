@@ -17,9 +17,15 @@ export default function HistoryPage() {
     setTodos(getTodos())
   }, [])
 
-  function handleDelete(todoId: number) {
+  function handleDelete(e: React.MouseEvent, todoId: number) {
+    e.preventDefault()
+    e.stopPropagation()
     if (!window.confirm("确定要删除这个待办吗？")) return
-    deleteTodo(todoId)
+    try {
+      deleteTodo(todoId)
+    } catch (error) {
+      console.error("delete todo failed in history", { todoId, error })
+    }
     loadTodos()
   }
 
@@ -154,7 +160,7 @@ export default function HistoryPage() {
                         <button
                           type="button"
                           aria-label="删除待办"
-                          onClick={() => handleDelete(item.todoId)}
+                          onClick={(e) => handleDelete(e, item.todoId)}
                           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground/35 active:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" strokeWidth={1.5} />

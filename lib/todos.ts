@@ -3,8 +3,6 @@
 import {
   scheduleReminder,
   scheduleRepeatReminders,
-  cancelReminder,
-  cancelReminders,
 } from "@/lib/reminderScheduler"
 
 export type RepeatMode = "none" | "workdays" | "weekends" | "mwf" | "tts" | "custom"
@@ -187,21 +185,7 @@ export function toggleTodo(id: number, completed: boolean): void {
 }
 
 export function deleteTodo(id: number): void {
+  if (!Number.isFinite(id)) return
   const todos = readTodos()
-  const todo = todos.find((t) => t.id === id)
   writeTodos(todos.filter((t) => t.id !== id))
-
-  // 删除时取消通知（fire-and-forget，best-effort）
-  if (todo) {
-    const ids = Array.isArray(todo.notificationIds) ? todo.notificationIds : []
-    if (ids.length > 0) {
-      cancelReminders(ids).catch((e) =>
-        console.error("cancel reminders after delete failed", { todoId: id, notificationIds: ids, error: e }),
-      )
-    } else {
-      cancelReminder(id).catch((e) =>
-        console.error("cancel reminder after delete failed", { todoId: id, error: e }),
-      )
-    }
-  }
 }
