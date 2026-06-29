@@ -29,18 +29,15 @@
         </provider>
 
         <!-- Reminder Alarm Services & Receivers -->
-        <receiver
-            android:name=".alarm.ReminderAlarmReceiver"
-            android:exported="false" />
+        <receiver android:name=".alarm.ReminderAlarmReceiver" android:exported="false" />
 
-        <receiver
-            android:name=".alarm.ReminderStopReceiver"
-            android:exported="false" />
+        <receiver android:name=".alarm.ReminderStopReceiver" android:exported="false" />
 
         <service
             android:name=".alarm.ReminderRingingService"
             android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
+            android:foregroundServiceType="mediaPlayback"
+        />
     </application>
 
     <!-- Permissions -->
